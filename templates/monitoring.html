@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictions Monitor</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            margin-top: 20px;
+        }
+        #last-prediction, #predictions {
+            margin-top: 20px;
+        }
+        .prediction-item {
+            background: #e9e9e9;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .last-prediction-item {
+            background: #d1ecf1;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .last-prediction-item img {
+            max-width: 600px; /* Set the maximum width for the image */
+            max-height: 600px; /* Set the maximum height for the image */
+            width: auto;
+            height: auto;
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        async function fetchPredictions() {
+            const response = await fetch('/predictions');
+            const predictions = await response.json();
+            const predictionsDiv = document.getElementById('predictions');
+            const lastPredictionDiv = document.getElementById('last-prediction');
+            predictionsDiv.innerHTML = '';
+            lastPredictionDiv.innerHTML = '';
+
+            if (Object.keys(predictions).length > 0) {
+                const lastId = Object.keys(predictions)[Object.keys(predictions).length - 1];
+                const lastPrediction = predictions[lastId];
+                const lastPredictionItem = document.createElement('div');
+                lastPredictionItem.className = 'last-prediction-item';
+                lastPredictionItem.innerHTML = `<strong>Last Prediction</strong><br>ID: ${lastId}<br>Image: ${lastPrediction.name}<br>Prediction: ${lastPrediction.prediction}<br><img src="/images/${lastPrediction.name}" alt="Last Prediction Image">`;
+                lastPredictionDiv.appendChild(lastPredictionItem);
+
+                for (const [id, prediction] of Object.entries(predictions).slice(0, -1)) {
+                    const p = document.createElement('div');
+                    p.className = 'prediction-item';
+                    p.innerHTML = `ID: ${id}, Image: ${prediction.name}, Prediction: ${prediction.prediction}`;
+                    predictionsDiv.appendChild(p);
+                }
+            }
+        }
+
+        async function resetPredictions() {
+            const response = await fetch('/reset', {
+                method: 'POST'
+            });
+            if (response.ok) {
+                fetchPredictions();
+            }
+        }
+
+        function startFetching() {
+            fetchPredictions();
+            setInterval(fetchPredictions, 5000); // Fetch predictions every 5 seconds
+        }
+
+        window.onload = startFetching;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Predictions Monitor</h1>
+        <div id="last-prediction" class="container"></div>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Old Predictions</h2>
+            <button class="btn btn-danger" onclick="resetPredictions()">Reset Predictions</button>
+        </div>
+        <div id="predictions" class="container"></div>
+    </div>
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

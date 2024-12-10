@@ -1,0 +1,6 @@
+onnxruntime
+openvino
+flask
+numpy
+pillow
+watchdog==6.0.0

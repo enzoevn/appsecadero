@@ -12,13 +12,6 @@ from collections import OrderedDict
 from io import BytesIO
 from datetime import datetime
 
-# --- Custom Modules (Adapt as needed) ---
-# If you have helper functions in separate files, import them here.
-# Example:
-# from your_module import preprocess_image, run_inference
-# For now, I'll keep the functions defined within this file.
-# If you don't have helper functions defined separately, you can remove this comment block.
-
 # --- Configuration ---
 MODELS_PATH = './models'  # Path to store ONNX models
 IMAGES_PATH = './images'  # Path that watchdog monitors

@@ -22,4 +22,8 @@ __pycache__
 .zsh_history
 .zshrc
 pyvenv.cfg
+*.code-workspace
+*.ipynb_checkpoints
+appsecadero.code-workspace
+
 

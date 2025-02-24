@@ -22,17 +22,17 @@ h1, h2 {
 .last-prediction-item {
     background: #212121;
     border-radius: 4px;
-    padding: 10px; /* Reduce padding */
-    margin-bottom: 10px; /* Reduce margin */
-    font-size: 1em; /* Smaller font size */
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 1em;
 }
 
 .last-prediction-item img {
-    max-width: 100%; /* Make image responsive within the card */
-    max-height: 200px; /* Limit max height */
-    min-width: 100px; /* Set minimum width */
-    min-height: 200px; /* Set minimum height */
-    margin-top: 5px; /* Reduce margin */
+    max-width: 100%;
+    max-height: 200px;
+    min-width: 100px;
+    min-height: 200px;
+    margin-top: 5px;
 }
 
 .chart-container {
@@ -47,19 +47,19 @@ h1, h2 {
     display: inline-block;
     vertical-align: top;
     margin-left: 2%;
-    min-height: 300px; /* Add a minimum height to the container */
+    min-height: 300px;
 }
 
 .last-prediction-container .card-body {
-    padding: 0.75rem; /* Reduce card body padding */
+    padding: 0.75rem;
 }
 
 .last-prediction-container .card-text {
-    font-size: 0.8rem; /* Smaller text in card */
+    font-size: 0.8rem;
     margin-bottom: 0.25rem;
 }
 
 .last-prediction-container .card-footer {
-    font-size: 0.7rem; /* Even smaller text in the footer */
+    font-size: 0.7rem;
     padding: 0.5rem;
 }

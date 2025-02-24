@@ -1,13 +1,11 @@
-let predictionChart; // Global chart variable
+let predictionChart;
 
 async function fetchPredictions() {
     const response = await fetch('/predictions');
     const predictions = await response.json();
     console.log(predictions);
     const predictionsDiv = document.getElementById('predictions');
-    const lastPredictionDiv = document.getElementById('last-prediction');
     predictionsDiv.innerHTML = '';
-    //lastPredictionDiv.innerHTML = ''; // Remove this line
 
     // Prepare data for chart
     const labels = Object.keys(predictions);
@@ -96,7 +94,6 @@ async function loadModel() {
 
         if (response.ok) {
             alert(data.message);
-            // Optionally, refresh the page or update the current model display
             fetchPredictions(); // Just reload predictions
         } else {
             alert(`Error: ${data.message}`);
@@ -114,7 +111,7 @@ function updateChart(labels, predictionData, lossData, percentageLossData) {
     }
 
     predictionChart = new Chart(ctx, {
-        type: 'line',  // Choose the chart type (e.g., 'line', 'bar', 'scatter')
+        type: 'line',
         data: {
             labels: labels,
             datasets: [

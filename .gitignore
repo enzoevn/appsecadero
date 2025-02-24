@@ -22,4 +22,6 @@ __pycache__
 .zsh_history
 .zshrc
 pyvenv.cfg
+/images
+/images_cap
 

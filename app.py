@@ -17,6 +17,8 @@ MODELS_PATH = './models'  # Path to store ONNX models
 IMAGES_PATH = './images'  # Path that watchdog monitors
 DEFAULT_MODEL = "secadero.onnx"  # Default ONNX model
 
+OLD_MODEL_LIST = ["secadero.onnx", "secadero_2.onnx"]
+
 app = Flask(__name__)
 
 # Global variable to hold the ONNX session and model path
@@ -59,7 +61,10 @@ def run_inference(ort_session, image):
     input_name = ort_session.get_inputs()[0].name
     ort_inputs = {input_name: image}
 
-    if current_model_path == "./models/secadero.onnx":
+    model_name = os.path.basename(current_model_path)
+    print(f"Model name: {model_name}")
+
+    if model_name in OLD_MODEL_LIST:
         # Perform inference
         ort_outs = ort_session.run(None, ort_inputs)
         return ort_outs[0][0] / 4

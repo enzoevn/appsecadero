@@ -40,11 +40,11 @@ async function fetchPredictions() {
                 <img src="/images/${lastPrediction.name}" class="img-fluid p-4">
             </div>
             <div class="justify-content-center card-footer text-center bg-dark text-white">
-                <strong class="pr-2">Predicción:</strong> ${lastPrediction.prediction} gramos
+                <strong class="pr-2">Predicción:</strong> ${lastPrediction.prediction.toFixed(0)} gramos
                 <br>
                 <strong class="pl-2">Merma:</strong> ${lastPrediction.percentage_loss.toFixed(1)}%
                 <br>
-                <strong class="pl-2">Pérdida Peso:</strong> ${lastPrediction.loss}
+                <strong class="pl-2">Pérdida Peso:</strong> ${lastPrediction.loss.toFixed(0)}
             </div>
         </div>
         `;
@@ -60,9 +60,9 @@ async function fetchPredictions() {
                     <p class="card-text">
                         <strong>Imagen:</strong> ${prediction.name}
                         <br>
-                        <strong>Predicción:</strong> ${prediction.prediction} gramos
-                        <strong>Merma:</strong> ${prediction.percentage_loss}%
-                        <strong>Pérdida Peso:</strong> ${prediction.loss}
+                        <strong>Predicción:</strong> ${prediction.prediction.toFixed(0)} gramos
+                        <strong>Merma:</strong> ${prediction.percentage_loss.toFixed(1)}%
+                        <strong>Pérdida Peso:</strong> ${prediction.loss.toFixed(0)}
                     </p>
                 </div>`;
             predictionsDiv.appendChild(p);

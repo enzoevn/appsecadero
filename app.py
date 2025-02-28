@@ -47,12 +47,26 @@ def preprocess_image(image_path):
     image = np.expand_dims(image, axis=0).astype(np.float32)
     return image
 
+# def run_inference(ort_session, image):
+#     ort_inputs = {ort_session.get_inputs()[0].name: image}
+#     ort_outs = ort_session.run(None, ort_inputs)
+#     ort_outs = ort_outs[0][0] / 4
+#     ort_outs = np.int32(ort_outs)
+#     return ort_outs
+
 def run_inference(ort_session, image):
-    ort_inputs = {ort_session.get_inputs()[0].name: image}
-    ort_outs = ort_session.run(None, ort_inputs)
-    ort_outs = ort_outs[0][0] / 4
-    ort_outs = np.int32(ort_outs)
-    return ort_outs
+    # Prepare the input data
+    input_name = ort_session.get_inputs()[0].name
+    ort_inputs = {input_name: image}
+
+    if current_model_path == "./models/secadero.onnx":
+        # Perform inference
+        ort_outs = ort_session.run(None, ort_inputs)
+        return ort_outs[0][0] / 4
+    else:
+        # Perform inference
+        ort_outs = ort_session.run(None, ort_inputs)
+        return ort_outs[0][0] * 1000
 
 # --- Watchdog Event Handler ---
 class ImageHandler(FileSystemEventHandler):

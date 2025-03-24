@@ -1,5 +1,12 @@
+/**
+ * Global variable to store the prediction chart instance
+ */
 let predictionChart;
 
+/**
+ * Fetches predictions from the server and updates the UI
+ * Retrieves prediction data, updates the chart and displays prediction history
+ */
 async function fetchPredictions() {
     const response = await fetch('/predictions');
     const predictions = await response.json();
@@ -15,7 +22,6 @@ async function fetchPredictions() {
     const lossData = Object.values(predictions).map(p => p.loss);
     const percentageLossData = Object.values(predictions).map(p => p.percentage_loss);
 
-
     // Update or create chart
     updateChart(labels, predictionData, lossData, percentageLossData);
 
@@ -29,15 +35,16 @@ async function fetchPredictions() {
         lastPredictionItem.className = 'last-prediction-item';
         lastPredictionItem.innerHTML = `
         <div class="card prediction-item">
-            <h4 class="card-title text-center prediction-item" style="font-size: 1rem;"><strong>Last Prediction</strong></h4>
+            <h4 class="card-title text-center prediction-item" style="font-size: 1rem;"><strong>Última Predicción</strong></h4>
             <div class="card-body prediction-item">
                 <div class="text-center">  <!-- Center the text content -->
                     <p class="card-text">
                         <strong>Fecha:</strong> ${lastId}<br>
-                        <strong>Imagen:</strong> ${lastPrediction.name}
+                        <strong>Imagen:</strong> ${lastPrediction.name}<br>
+                        <strong>Carpeta:</strong> ${lastPrediction.folder}
                     </p>
                 </div>
-                <img src="/images/${lastPrediction.name}" class="img-fluid p-4">
+                <img src="/images/${lastPrediction.folder}/${lastPrediction.name}" class="img-fluid p-4">
             </div>
             <div class="justify-content-center card-footer text-center bg-dark text-white">
                 <strong class="pr-2">Predicción:</strong> ${lastPrediction.prediction.toFixed(0)} gramos
@@ -70,6 +77,9 @@ async function fetchPredictions() {
     }
 }
 
+/**
+ * Resets all predictions by calling the reset endpoint
+ */
 async function resetPredictions() {
     const response = await fetch('/reset', {
         method: 'POST'
@@ -79,6 +89,9 @@ async function resetPredictions() {
     }
 }
 
+/**
+ * Loads a selected model by sending a request to the server
+ */
 async function loadModel() {
     const modelName = document.getElementById('modelSelect').value;
     const formData = new FormData();
@@ -104,6 +117,13 @@ async function loadModel() {
     }
 }
 
+/**
+ * Updates the chart with new prediction data
+ * @param {Array} labels - Timestamps for x-axis
+ * @param {Array} predictionData - Prediction values
+ * @param {Array} lossData - Weight loss values
+ * @param {Array} percentageLossData - Percentage loss values
+ */
 function updateChart(labels, predictionData, lossData, percentageLossData) {
     const ctx = document.getElementById('predictionChart').getContext('2d');
     if (predictionChart) {
@@ -242,6 +262,10 @@ function updateChart(labels, predictionData, lossData, percentageLossData) {
     });
 }
 
+/**
+ * Starts periodic fetching of predictions
+ * Initializes the first fetch and sets up an interval
+ */
 function startFetching() {
     fetchPredictions();
     setInterval(fetchPredictions, 5000); // Fetch predictions every 5 seconds

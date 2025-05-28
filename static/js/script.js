@@ -41,7 +41,9 @@ async function fetchPredictions() {
                     <p class="card-text">
                         <strong>Fecha:</strong> ${lastId}<br>
                         <strong>Imagen:</strong> ${lastPrediction.name}<br>
-                        <strong>Carpeta:</strong> ${lastPrediction.folder}
+                        <strong>Carpeta:</strong> ${lastPrediction.folder}<br>
+                        <strong>Días transcurridos:</strong> ${lastPrediction.days}<br>
+                        ${lastPrediction.initial_weight !== undefined && lastPrediction.initial_weight !== null ? `<strong>Peso inicial:</strong> ${lastPrediction.initial_weight}g<br>` : ''}
                     </p>
                 </div>
                 <img src="/images/${lastPrediction.folder}/${lastPrediction.name}" class="img-fluid p-4">
@@ -65,8 +67,9 @@ async function fetchPredictions() {
                 <div class="card-body">
                     <h5 class="card-title">Predicción del  ${id}</h5>
                     <p class="card-text">
-                        <strong>Imagen:</strong> ${prediction.name}
-                        <br>
+                        <strong>Imagen:</strong> ${prediction.name}<br>
+                        <strong>Días transcurridos:</strong> ${prediction.days}<br>
+                        ${prediction.initial_weight !== undefined && prediction.initial_weight !== null ? `<strong>Peso inicial:</strong> ${prediction.initial_weight}g<br>` : ''}
                         <strong>Predicción:</strong> ${prediction.prediction.toFixed(0)} gramos
                         <strong>Merma:</strong> ${prediction.percentage_loss.toFixed(1)}%
                         <strong>Pérdida Peso:</strong> ${prediction.loss.toFixed(0)}
@@ -86,6 +89,42 @@ async function resetPredictions() {
     });
     if (response.ok) {
         fetchPredictions();
+        // Reset the model status
+        updateModelStatus('', false);
+        // Reset the model selector
+        document.getElementById('modelSelect').value = '';
+    }
+}
+
+/**
+ * Set the initial weight on the server
+ */
+async function setInitialWeight() {
+    const weight = document.getElementById('initialWeightInput').value;
+    const weightNum = parseFloat(weight);
+    
+    // Initial weight validation range
+    if (!weight || isNaN(weightNum) || weightNum < 100 || weightNum > 10000) {
+        alert('Por favor ingrese un peso inicial válido entre 100g y 10000g (10kg).\n\nEjemplos válidos:\n- 2500g (2.5kg)\n- 1000g (1kg)\n- 5000g (5kg)');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/set_initial_weight', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initial_weight: weightNum })
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+            alert('Peso inicial establecido correctamente: ' + weight + 'g (' + (weightNum/1000).toFixed(2) + 'kg)');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al establecer el peso inicial');
     }
 }
 
@@ -94,6 +133,13 @@ async function resetPredictions() {
  */
 async function loadModel() {
     const modelName = document.getElementById('modelSelect').value;
+    
+    // Validate that a model has been selected
+    if (!modelName || modelName === '') {
+        alert('Por favor selecciona un modelo antes de cargar.');
+        return;
+    }
+    
     const formData = new FormData();
     formData.append('model_name', modelName);
 
@@ -106,6 +152,18 @@ async function loadModel() {
         const data = await response.json();
 
         if (response.ok) {
+            // If the model requires days elapsed, ask the user
+            if (modelName.includes('SecaderoDaysFeature') || modelName.includes('SecaderoDaysAndWeightFeature')) {
+                let dias = prompt('Ingrese los días transcurridos iniciales:', '0');
+                dias = dias === null ? '0' : dias;
+                await fetch('/set_initial_days', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ days: dias })
+                });
+            }
+            // Update model status indicator
+            updateModelStatus(modelName, true);
             alert(data.message);
             fetchPredictions(); // Just reload predictions
         } else {
@@ -272,3 +330,48 @@ function startFetching() {
 }
 
 window.onload = startFetching;
+
+/**
+ * Update the model status indicator
+ */
+function updateModelStatus(modelName, isLoaded) {
+    const statusDiv = document.getElementById('modelStatus');
+    if (isLoaded) {
+        statusDiv.className = 'alert alert-success text-center';
+        statusDiv.innerHTML = `<strong>✅ Modelo cargado:</strong> ${modelName}`;
+    } else {
+        statusDiv.className = 'alert alert-warning text-center';
+        statusDiv.innerHTML = '<strong>⚠️ No hay modelo cargado</strong> - Por favor selecciona y carga un modelo para comenzar el monitoreo';
+    }
+}
+
+/**
+ * Send the image and extra parameters to the backend for inference
+ */
+async function predictImage(imageFile) {
+    const model = document.getElementById('modelSelect').value;
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    // Always add the initial weight from the UI field
+    const weight = document.getElementById('initialWeightInput').value;
+    if (weight && weight > 0) {
+        formData.append('initial_weight', weight);
+    }
+    
+    try {
+        const response = await fetch('/predict_image', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        if (response.ok) {
+            alert('Predicción: ' + data.prediction + ' gramos');
+            fetchPredictions();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error de red: ' + error);
+    }
+}

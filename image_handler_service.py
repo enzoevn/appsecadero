@@ -14,10 +14,11 @@ import uuid
 from collections import OrderedDict
 from datetime import datetime
 
-from settings import IMAGES_PATH
-from utils import extract_date_from_folder, get_min_date_from_folders, preprocess_image
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+
+from settings import IMAGES_PATH
+from utils import extract_date_from_folder, preprocess_image
 
 
 class ImageProcessingService:
@@ -30,6 +31,8 @@ class ImageProcessingService:
         initial_days_reference (int): Initial days reference defined by the user
         initial_weight_reference (float): Initial weight reference for loss calculations
         model_manager: Instance of the model manager
+        min_date_cache (datetime): Cached minimum date from folders to avoid recalculating
+        processed_folders (set): Track processed folders to avoid reprocessing
     """
 
     def __init__(self, model_manager):
@@ -45,9 +48,77 @@ class ImageProcessingService:
             self.initial_days_reference = None
             self.initial_weight_reference = 2500  # Default value of 2.5kg
             self.model_manager = model_manager
+            self.min_date_cache = None  # Cache para evitar recalcular la fecha mínima
+            self.processed_folders = (
+                set()
+            )  # Track processed folders to avoid reprocessing
+            self._initialize_processed_folders()
         except Exception as e:
             print(f"Error initializing ImageProcessingService: {e}")
             raise
+
+    def _initialize_processed_folders(self):
+        """Initialize the set of processed folders with existing folders at startup."""
+        try:
+            if os.path.exists(IMAGES_PATH):
+                for folder in os.listdir(IMAGES_PATH):
+                    folder_path = os.path.join(IMAGES_PATH, folder)
+                    if os.path.isdir(folder_path):
+                        self.processed_folders.add(folder)
+                        print(
+                            f"[DEBUG] Marking existing folder as processed at startup: {folder}"
+                        )
+        except Exception as e:
+            print(f"Error initializing processed folders: {e}")
+
+    def _reset_for_new_session(self):
+        """Reset the system for a new prediction session (when days are set)."""
+        try:
+            self.min_date_cache = None
+            self.processed_folders.clear()
+            print("[DEBUG] System reset for new prediction session")
+        except Exception as e:
+            print(f"Error resetting for new session: {e}")
+
+    def _get_or_update_min_date(self, current_folder_date):
+        """
+        Get the minimum date from cache or update it if necessary.
+
+        Args:
+            current_folder_date (datetime): Date of the current folder being processed
+
+        Returns:
+            datetime: The minimum date among all folders
+        """
+        try:
+            # Si no tenemos cache, usar la fecha actual como nueva referencia
+            if self.min_date_cache is None:
+                print(
+                    "[DEBUG] No min_date_cache - using current image as new reference"
+                )
+
+                if current_folder_date:
+                    print(f"[DEBUG] Setting new reference date: {current_folder_date}")
+                    self.min_date_cache = current_folder_date
+                else:
+                    print("[DEBUG] No valid current folder date, cannot set reference")
+                    return None
+
+                print(f"[DEBUG] New reference date established: {self.min_date_cache}")
+
+            # Si la fecha actual es menor que la mínima conocida, actualizar
+            elif current_folder_date and current_folder_date < self.min_date_cache:
+                print(
+                    f"[DEBUG] New minimum date found. Previous: {self.min_date_cache}, Current folder: {current_folder_date}"
+                )
+                self.min_date_cache = current_folder_date
+                print(f"[DEBUG] Updated min_date_cache: {self.min_date_cache}")
+
+            return self.min_date_cache
+        except Exception as e:
+            print(f"Error updating min date cache: {e}")
+            # En caso de error, usar la fecha actual si está disponible
+            return current_folder_date if current_folder_date else None
 
     def process_image(self, image_path):
         """
@@ -58,24 +129,37 @@ class ImageProcessingService:
         """
         print(f"[DEBUG] Entering process_image with: {image_path}")
         try:
+            folder_name = os.path.basename(os.path.dirname(image_path))
+
+            # Check if this folder was already processed to avoid reprocessing
+            if folder_name in self.processed_folders:
+                print(f"[DEBUG] Folder {folder_name} already processed, skipping...")
+                return
+
+            # Mark this folder as processed
+            self.processed_folders.add(folder_name)
+            print(f"[DEBUG] Processing new folder: {folder_name}")
+
             # Use the image size of the loaded model
             target_size = self.model_manager.image_size
             print(f"[DEBUG] Using image size: {target_size}")
 
             image = preprocess_image(image_path, target_size)
-            folder_name = os.path.basename(os.path.dirname(image_path))
 
-            # Only calculate days if the model needs them
+            # Only calculate days if the model actually needs them (hybrid models)
             days = 0
             kwargs = {}
 
+            # Check if model needs days calculation BEFORE doing any date processing
             if (
                 self.model_manager.infer_function == self.model_manager.infer_hybrid
                 or self.model_manager.infer_function
                 == self.model_manager.infer_hybrid_initialweights
             ):
+                print("[DEBUG] Hybrid model detected, calculating days...")
                 folder_date = extract_date_from_folder(folder_name)
-                min_date = get_min_date_from_folders(IMAGES_PATH)
+                # Usar el método optimizado para obtener la fecha mínima
+                min_date = self._get_or_update_min_date(folder_date)
                 print(
                     f"[DEBUG] folder_name: {folder_name}, folder_date: {folder_date}, min_date: {min_date}"
                 )
@@ -102,7 +186,7 @@ class ImageProcessingService:
                             f"[WARNING] Initial weight too low: {self.initial_weight_reference}g. Is it configured correctly?"
                         )
             else:
-                print("[DEBUG] ResNet model detected, no days are calculated")
+                print("[DEBUG] ResNet model detected, no days calculation needed")
 
             if self.model_manager.ort_session:
                 print(f"[DEBUG] Calling model_manager.predict with kwargs: {kwargs}")
@@ -193,6 +277,9 @@ class ImageProcessingService:
         try:
             self.predictions = dict()
             self.first_prediction = None  # Reset first prediction reference
+            self.min_date_cache = None  # Reset min date cache
+            self.processed_folders.clear()  # Clear processed folders to allow reprocessing
+            print("[DEBUG] Predictions, min_date_cache, and processed folders reset")
         except Exception as e:
             print(f"Error resetting predictions: {e}")
 
@@ -205,6 +292,8 @@ class ImageProcessingService:
         """
         self.initial_days_reference = days
         print(f"[DEBUG] Initial days set: {days}")
+        print("[DEBUG] Cache reset - next new image will be used as reference date")
+        self._reset_for_new_session()
 
     def set_initial_weight(self, weight):
         """

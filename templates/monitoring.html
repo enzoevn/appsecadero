@@ -28,7 +28,7 @@
             <button class="btn btn-danger ml-2" onclick="resetPredictions()">Limpiar Predicciones</button>
         </div>
 
-        <!-- Indicador de estado del modelo -->
+        <!-- Model status indicator -->
         <div class="row justify-content-center mt-2">
             <div class="col-md-8">
                 <div id="modelStatus" class="alert alert-warning text-center" role="alert">
@@ -37,8 +37,8 @@
             </div>
         </div>
 
-        <!-- Sección de peso inicial -->
         <div class="row justify-content-center mt-3">
+            <!-- Initial weight input -->
             <div class="col-md-6">
                 <div class="form-group d-flex align-items-center justify-content-center">
                     <div class="d-flex align-items-center">
@@ -48,7 +48,19 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Shrinkage expected input -->
+            <div class="col-md-6">
+                <div class="form-group d-flex align-items-center justify-content-center">
+                    <div class="d-flex align-items-center">
+                        <label for="expectedShrinkageInput" class="col-form-label mr-3" style="min-width: 120px;">Merma esperada (%):</label>
+                        <input type="number" class="form-control mr-3" id="expectedShrinkageInput" min="0" max="100" step="0.1" placeholder="ej: 15.0" value="23.0" style="width: 150px;" title="Ingrese la merma esperada entre 0% y 100%">
+                        <button class="btn btn-secondary" onclick="setExpectedShrinkage()">Establecer</button>
+                    </div>
+                </div>
+            </div>
         </div>
+
 
         <div class="d-flex">
             <div class="chart-container">

@@ -31,11 +31,22 @@ async function fetchPredictions() {
         const lastPredictionContainer = document.getElementById('last-prediction-container');  // Get the container
         lastPredictionContainer.innerHTML = ''; // Clear existing content
 
+        // Get expected shrinkage from input
+        const expectedShrinkage = parseFloat(document.getElementById('expectedShrinkageInput').value) || 0;
+        const currentShrinkage = lastPrediction.percentage_loss;
+        
+        // Check if current shrinkage exceeds expected threshold
+        const isProductReady = currentShrinkage >= expectedShrinkage;
+        const cardClass = isProductReady ? 'card prediction-item border-success' : 'card prediction-item';
+        const footerClass = isProductReady ? 'justify-content-center card-footer text-center bg-success text-white' : 'justify-content-center card-footer text-center bg-dark text-white';
+        const readyMessage = isProductReady ? '<div class="alert alert-success text-center mt-2 mb-2"><strong>PRODUCTO LISTO</strong></div>' : '';
+
         const lastPredictionItem = document.createElement('div');
         lastPredictionItem.className = 'last-prediction-item';
         lastPredictionItem.innerHTML = `
-        <div class="card prediction-item">
+        <div class="${cardClass}">
             <h4 class="card-title text-center prediction-item" style="font-size: 1rem;"><strong>Última Predicción</strong></h4>
+            ${readyMessage}
             <div class="card-body prediction-item">
                 <div class="text-center">  <!-- Center the text content -->
                     <p class="card-text">
@@ -48,7 +59,7 @@ async function fetchPredictions() {
                 </div>
                 <img src="/images/${lastPrediction.folder}/${lastPrediction.name}" class="img-fluid p-4">
             </div>
-            <div class="justify-content-center card-footer text-center bg-dark text-white">
+            <div class="${footerClass}">
                 <strong class="pr-2">Predicción:</strong> ${lastPrediction.prediction.toFixed(0)} gramos
                 <br>
                 <strong class="pl-2">Merma:</strong> ${lastPrediction.percentage_loss.toFixed(1)}%
@@ -125,6 +136,28 @@ async function setInitialWeight() {
     } catch (error) {
         console.error('Error:', error);
         alert('Error al establecer el peso inicial');
+    }
+}
+
+/**
+ * Set the expected shrinkage percentage
+ */
+async function setExpectedShrinkage() {
+    const shrinkage = document.getElementById('expectedShrinkageInput').value;
+    const shrinkageNum = parseFloat(shrinkage);
+    
+    // Expected shrinkage validation range
+    if (!shrinkage || isNaN(shrinkageNum) || shrinkageNum < 0 || shrinkageNum > 100) {
+        alert('Por favor ingrese una merma esperada válida entre 0% y 100%.\n\nEjemplos válidos:\n- 15.0%\n- 12.5%\n- 20.0%');
+        return;
+    }
+    
+    try {
+        alert('Merma esperada establecida correctamente: ' + shrinkage + '%');
+        fetchPredictions(); // Refresh predictions to apply new threshold
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al establecer la merma esperada');
     }
 }
 
